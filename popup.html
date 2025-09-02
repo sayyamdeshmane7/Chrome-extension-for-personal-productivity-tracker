@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productivity Tracker</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(90deg, #3498db, #2c3e50);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+        }
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        .tab:hover {
+            background: #e8f4fc;
+        }
+        .tab.active {
+            border-bottom: 3px solid #3498db;
+            color: #3498db;
+            background: white;
+        }
+        .tab-content {
+            padding: 25px;
+            min-height: 400px;
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eaeaea;
+        }
+        .card h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 18px;
+        }
+        .goal-input {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .goal-input input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px 0 0 6px;
+            outline: none;
+            font-size: 16px;
+        }
+        .goal-input button {
+            padding: 12px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 0 6px 6px 0;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        .goal-input button:hover {
+            background: #2980b9;
+        }
+        .goal-list {
+            list-style: none;
+        }
+        .goal-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .goal-item:last-child {
+            border-bottom: none;
+        }
+        .goal-item input[type="checkbox"] {
+            margin-right: 15px;
+            transform: scale(1.3);
+        }
+        .goal-text {
+            flex: 1;
+        }
+        .goal-item.completed .goal-text {
+            text-decoration: line-through;
+            color: #7f8c8d;
+        }
+        .goal-actions button {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 5px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-box {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .website-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .website-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+        .website-item:hover {
+            background: #f9f9f9;
+        }
+        .website-item:last-child {
+            border-bottom: none;
+        }
+        .website-name {
+            font-weight: 500;
+        }
+        .website-time {
+            color: #7f8c8d;
+        }
+        .productive {
+            color: #2ecc71;
+        }
+        .distracting {
+            color: #e74c3c;
+        }
+        .chart-container {
+            height: 250px;
+            margin-top: 20px;
+        }
+        .focus-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 15px;
+        }
+        .focus-button:hover {
+            background: #27ae60;
+        }
+        .focus-button.active {
+            background: #e74c3c;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 14px;
+            border-top: 1px solid #eaeaea;
+        }
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 25px;
+        }
+        .instructions h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        .instructions ol {
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin-bottom: 10px;
+        }
+        @media (max-width: 768px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            .tab {
+                padding: 12px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // Main App Component
+        const ProductivityTracker = () => {
+            const [activeTab, setActiveTab] = useState('goals');
+            const [goals, setGoals] = useState([]);
+            const [newGoal, setNewGoal] = useState('');
+            const [trackedTime, setTrackedTime] = useState({});
+            const [productivityScore, setProductivityScore] = useState(75);
+            const [focusTime, setFocusTime] = useState(126);
+            const [distractions, setDistractions] = useState(12);
+            const [timeToday, setTimeToday] = useState(142);
+            const [focusMode, setFocusMode] = useState(false);
+
+            // Load mock data on component mount
+            useEffect(() => {
+                const mockGoals = [
+                    { id: 1, text: 'Complete project proposal', completed: true },
+                    { id: 2, text: 'Review weekly tasks', completed: false },
+                    { id: 3, text: 'Learn new productivity technique', completed: false },
+                    { id: 4, text: 'Organize digital workspace', completed: false }
+                ];
+                setGoals(mockGoals);
+
+                const mockTrackedTime = {
+                    'github.com': { time: 87, productive: true },
+                    'notion.so': { time: 28, productive: true },
+                    'docs.google.com': { time: 45, productive: true },
+                    'youtube.com': { time: 45, productive: false },
+                    'reddit.com': { time: 37, productive: false },
+                    'twitter.com': { time: 28, productive: false },
+                    'nytimes.com': { time: 15, productive: true }
+                };
+                setTrackedTime(mockTrackedTime);
+            }, []);
+
+            const addGoal = () => {
+                if (newGoal.trim()) {
+                    const newGoalItem = {
+                        id: Date.now(),
+                        text: newGoal.trim(),
+                        completed: false
+                    };
+                    setGoals([...goals, newGoalItem]);
+                    setNewGoal('');
+                }
+            };
+
+            const toggleGoal = (id) => {
+                setGoals(goals.map(goal => 
+                    goal.id === id ? { ...goal, completed: !goal.completed } : goal
+                ));
+            };
+
+            const deleteGoal = (id) => {
+                setGoals(goals.filter(goal => goal.id !== id));
+            };
+
+            const toggleFocusMode = () => {
+                setFocusMode(!focusMode);
+                // In a real extension, this would trigger website blocking
+            };
+
+            // Calculate productive vs distracting time
+            const productiveTime = Object.values(trackedTime)
+                .filter(site => site.productive)
+                .reduce((total, site) => total + site.time, 0);
+                
+            const distractingTime = Object.values(trackedTime)
+                .filter(site => !site.productive)
+                .reduce((total, site) => total + site.time, 0);
+
+            return (
+                <div className="container">
+                    <div className="header">
+                        <h1>Productivity Tracker</h1>
+                        <p>Track your time, achieve your goals, and stay focused</p>
+                    </div>
+
+                    <div className="tabs">
+                        <div className={`tab ${activeTab === 'goals' ? 'active' : ''}`} onClick={() => setActiveTab('goals')}>
+                            Goals
+                        </div>
+                        <div className={`tab ${activeTab === 'time' ? 'active' : ''}`} onClick={() => setActiveTab('time')}>
+                            Time Tracking
+                        </div>
+                        <div className={`tab ${activeTab === 'stats' ? 'active' : ''}`} onClick={() => setActiveTab('stats')}>
+                            Statistics
+                        </div>
+                    </div>
+
+                    <div className="tab-content">
+                        {activeTab === 'goals' && (
+                            <div>
+                                <div className="card">
+                                    <h3>Set Daily Goals</h3>
+                                    <div className="goal-input">
+                                        <input 
+                                            type="text" 
+                                            placeholder="What do you want to accomplish today?" 
+                                            value={newGoal}
+                                            onChange={(e) => setNewGoal(e.target.value)}
+                                            onKeyPress={(e) => e.key === 'Enter' && addGoal()}
+                                        />
+                                        <button onClick={addGoal}>Add Goal</button>
+                                    </div>
+                                    
+                                    <h3>Today's Goals</h3>
+                                    <ul className="goal-list">
+                                        {goals.map(goal => (
+                                            <li key={goal.id} className={`goal-item ${goal.completed ? 'completed' : ''}`}>
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={goal.completed}
+                                                    onChange={() => toggleGoal(goal.id)}
+                                                />
+                                                <span className="goal-text">{goal.text}</span>
+                                                <div className="goal-actions">
+                                                    <button onClick={() => deleteGoal(goal.id)}>×</button>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'time' && (
+                            <div>
+                                <div className="stats">
+                                    <div className="stat-box">
+                                        <div className="stat-value">{Math.floor(productiveTime / 60)}h {productiveTime % 60}m</div>
+                                        <div className="stat-label">Productive Time</div>
+                                    </div>
+                                    <div className="stat-box">
+                                        <div className="stat-value">{Math.floor(distractingTime / 60)}h {distractingTime % 60}m</div>
+                                        <div className="stat-label">Distracting Time</div>
+                                    </div>
+                                    <div className="stat-box">
+                                        <div className="stat-value">{productivityScore}%</div>
+                                        <div className="stat-label">Productivity Score</div>
+                                    </div>
+                                </div>
+                                
+                                <div className="card">
+                                    <h3>Website Time Breakdown</h3>
+                                    <div className="website-list">
+                                        {Object.entries(trackedTime)
+                                            .sort((a, b) => b[1].time - a[1].time)
+                                            .map(([website, data]) => (
+                                                <div key={website} className="website-item">
+                                                    <span className="website-name">{website}</span>
+                                                    <span className={`website-time ${data.productive ? 'productive' : 'distracting'}`}>
+                                                        {Math.floor(data.time / 60)}h {data.time % 60}m
+                                                    </span>
+                                                </div>
+                                            ))}
+                                    </div>
+                                </div>
+                                
+                                <button className={`focus-button ${focusMode ? 'active' : ''}`} onClick={toggleFocusMode}>
+                                    {focusMode ? 'Disable Focus Mode' : 'Enable Focus Mode'}
+                                </button>
+                            </div>
+                        )}
+
+                        {activeTab === 'stats' && (
+                            <div>
+                                <div className="stats">
+                                    <div className="stat-box">
+                                        <div className="stat-value">{focusTime}m</div>
+                                        <div className="stat-label">Focus Time Today</div>
+                                    </div>
+                                    <div className="stat-box">
+                                        <div className="stat-value">{distractions}</div>
+                                        <div className="stat-label">Distractions Blocked</div>
+                                    </div>
+                                    <div className="stat-box">
+                                        <div className="stat-value">{timeToday}m</div>
+                                        <div className="stat-label">Total Time Today</div>
+                                    </div>
+                                </div>
+                                
+                                <div className="card">
+                                    <h3>Productivity Trends</h3>
+                                    <div className="chart-container">
+                                        <ProductivityChart />
+                                    </div>
+                                </div>
+                                
+                                <div className="card">
+                                    <h3>Weekly Report</h3>
+                                    <p>Your productivity increased by <span className="productive">12%</span> compared to last week.</p>
+                                    <p>You spent <span className="productive">45 minutes less</span> on distracting websites.</p>
+                                    <p>You completed <span className="productive">80%</span> of your weekly goals.</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="instructions">
+                        <h3>How to Install as a Chrome Extension</h3>
+                        <ol>
+                            <li>Create a new folder for your extension files</li>
+                            <li>Save this HTML file as "index.html"</li>
+                            <li>Create a "manifest.json" file with proper Chrome extension configuration</li>
+                            <li>Open Chrome and go to chrome://extensions/</li>
+                            <li>Enable "Developer mode"</li>
+                            <li>Click "Load unpacked" and select your extension folder</li>
+                        </ol>
+                    </div>
+                    
+                    <div className="footer">
+                        Productivity Tracker v1.0 • {new Date().toLocaleDateString()}
+                    </div>
+                </div>
+            );
+        };
+
+        // Chart component for productivity trends
+        const ProductivityChart = () => {
+            const chartRef = useRef(null);
+            
+            useEffect(() => {
+                const ctx = chartRef.current.getContext('2d');
+                
+                // Sample data for the chart
+                const data = {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [
+                        {
+                            label: 'Productivity Score',
+                            data: [65, 72, 78, 75, 80, 85, 82],
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Focus Time (min)',
+                            data: [85, 102, 120, 95, 140, 75, 110],
+                            borderColor: '#2ecc71',
+                            backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
+                };
+                
+                const options = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 50,
+                            max: 150
+                        }
+                    }
+                };
+                
+                // Create chart
+                const chart = new Chart(ctx, {
+                    type: 'line',
+                    data: data,
+                    options: options
+                });
+                
+                return () => {
+                    chart.destroy();
+                };
+            }, []);
+            
+            return (
+                <canvas ref={chartRef}></canvas>
+            );
+        };
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ProductivityTracker />);
+    </script>
+</body>
+</html>
